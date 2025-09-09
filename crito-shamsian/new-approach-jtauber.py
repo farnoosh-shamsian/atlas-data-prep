@@ -51,6 +51,10 @@ def skip_substring(A, B, tokens_to_ignore=None):
     return matches
 
 
+refs = []
+for line in open("texts/tlg0059.tlg003.perseus-grc2b1.txt"):
+    refs.append(line.split(" ", maxsplit=1)[0])
+
 table = load_rows("wegner-corrected-finalized-versions.csv")
 treebank = load_rows("wegner-corrected-treebank.csv")
 
@@ -92,18 +96,19 @@ def align_from_column(column: str, out):
                 quit()
 
         if sentence_id not in sentence_show:
+            offset = False
             print(file=out)
-            print(f"# Sentence {sentence_id}", file=out)
+            print(f"# {refs[int(sentence_id)-1]}", file=out)
             print(file=out)
             print(greek_sentences[sentence_id].strip(), sep="\t", file=out)
             print(persian_sentences[sentence_id], sep="\t", file=out)
             print(file=out)
 
-            s_split = [
+            r_split = [
                 token.strip(".,;")
                 for token in re.split(r"[\u0020]", greek_sentences[sentence_id].strip())
             ]
-            tokens = list(enumerate(s_split, 1))
+            tokens = list(enumerate(r_split, 1))
             print("  ".join(b + "[" + str(a) + "]" for a, b in tokens), file=out)
 
             s_split = [
@@ -120,7 +125,13 @@ def align_from_column(column: str, out):
 
         if persian_translation:
             t_split = re.split(r"[\u0020]", persian_translation)
-            print("\t[" + word_id + "]", " ".join(t_split), end=" ", file=out)
+            if word_id == "1" and greek_sentences[sentence_id].split()[0] in ["Σωκράτης.", "Κρίτων."]:
+                offset = True
+                print("\t[1] {1}", s_split[0], file=out)
+            if offset:
+                print("\t[" + str(int(word_id) + 1) + "]", " ".join(t_split), end=" ", file=out)
+            else:
+                print("\t[" + word_id + "]", " ".join(t_split), end=" ", file=out)
             matches = skip_substring(s_split, t_split, tokens_used)
             if not matches:
                 matches = skip_substring(s_split, t_split)
