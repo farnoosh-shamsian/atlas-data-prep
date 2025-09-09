@@ -68,7 +68,7 @@ for row in table:
     persian_sentences[key] = row["Primary translation"].strip()
 
 
-def align_from_column(column: str):
+def align_from_column(column: str, out):
     sentence_show = set()
 
     for row in treebank:
@@ -92,53 +92,42 @@ def align_from_column(column: str):
                 quit()
 
         if sentence_id not in sentence_show:
-            print()
-            print(f"# {sentence_id}")
-            print(persian_sentences[sentence_id], sep="\t")
+            print(file=out)
+            print(f"# {sentence_id}", file=out)
+            print(persian_sentences[sentence_id], sep="\t", file=out)
             s_split = [
                 token.strip("،؟.:«»![]؛")
                 for token in re.split(r"[\u0020]", persian_sentences[sentence_id])
             ]
             tokens = list(enumerate(s_split, 1))
-            print("  ".join(b + "{" + str(a) + "}" for a, b in tokens))
+            print("  ".join(b + "{" + str(a) + "}" for a, b in tokens), file=out)
 
             sentence_show.add(sentence_id)
             tokens_used = set()
 
         if persian_translation:
-            # t_split = re.split(r"[\u0020]", persian_translation)
-            # print("\t" + word_id, " ".join(t_split), end=" ")
-            # found = False
-            # for i in range(1, len(s_split) + 1):
-            #     poss = s_split[i - 1:i+len(t_split) - 1]
-            #     if poss == t_split:
-            #         print(" ".join([("{" + str(j) + "}") for j in range(i, i+len(t_split))]))
-            #         found = True
-            # if not found:
-            #     print("X")
-
             t_split = re.split(r"[\u0020]", persian_translation)
-            print("\t" + word_id, " ".join(t_split), end=" ")
+            print("\t" + word_id, " ".join(t_split), end=" ", file=out)
             matches = skip_substring(s_split, t_split, tokens_used)
             if not matches:
                 matches = skip_substring(s_split, t_split)
             if matches:
-                print(" ".join([("{" + str(j) + "}") for j in matches]))
+                print(" ".join([("{" + str(j) + "}") for j in matches]), file=out)
                 for match in matches:
                     tokens_used.add(match)
             else:
-                print("X")
+                print("X", file=out)
 
 
 def main():
     alignment_columns = [
-        "Primary translation",
-        "Literal translation",
-        "Secondary translation",
+        ("Primary translation", "alignment_primary.txt"),
+        ("Literal translation", "alignment_literal.txt"),
+        ("Secondary translation", "alignment_secondary.txt"),
     ]
-    for column in alignment_columns:
-        print(f"Aligning based on word-level alignment in {column}")
-        align_from_column(column)
+    for column, output in alignment_columns:
+        with open(output, "w") as g:
+            align_from_column(column, g)
 
 
 if __name__ == "__main__":
