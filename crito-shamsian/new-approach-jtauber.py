@@ -93,8 +93,19 @@ def align_from_column(column: str, out):
 
         if sentence_id not in sentence_show:
             print(file=out)
-            print(f"# {sentence_id}", file=out)
+            print(f"# Sentence {sentence_id}", file=out)
+            print(file=out)
+            print(greek_sentences[sentence_id].strip(), sep="\t", file=out)
             print(persian_sentences[sentence_id], sep="\t", file=out)
+            print(file=out)
+
+            s_split = [
+                token.strip(".,;")
+                for token in re.split(r"[\u0020]", greek_sentences[sentence_id].strip())
+            ]
+            tokens = list(enumerate(s_split, 1))
+            print("  ".join(b + "[" + str(a) + "]" for a, b in tokens), file=out)
+
             s_split = [
                 token.strip("،؟.:«»![]؛")
                 for token in re.split(r"[\u0020]", persian_sentences[sentence_id])
@@ -105,9 +116,11 @@ def align_from_column(column: str, out):
             sentence_show.add(sentence_id)
             tokens_used = set()
 
+            print(file=out)
+
         if persian_translation:
             t_split = re.split(r"[\u0020]", persian_translation)
-            print("\t" + word_id, " ".join(t_split), end=" ", file=out)
+            print("\t[" + word_id + "]", " ".join(t_split), end=" ", file=out)
             matches = skip_substring(s_split, t_split, tokens_used)
             if not matches:
                 matches = skip_substring(s_split, t_split)
