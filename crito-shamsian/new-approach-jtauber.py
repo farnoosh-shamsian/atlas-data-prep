@@ -64,9 +64,9 @@ for row in table:
     key = row["Title3"].split("|")[1].strip(".")
     assert key not in greek_sentences
     if key == "231":
-        greek_sentences["231"] = (
-            "σὺ δὲ οὔτε Λακεδαίμονα προῃροῦ οὔτε Κρήτην, ἃς δὴ ἑκάστοτε φῂς εὐνομεῖσθαι, οὔτε ἄλλην οὐδεμίαν τῶν Ἑλληνίδων πόλεων οὐδὲ τῶν βαρβαρικῶν, ἀλλὰ ἐλάττω ἐξ αὐτῆς ἀπεδήμησας ἢ οἱ χωλοί τε καὶ τυφλοὶ καὶ οἱ ἄλλοι ἀνάπηροι·"
-        )
+        greek_sentences[
+            "231"
+        ] = "σὺ δὲ οὔτε Λακεδαίμονα προῃροῦ οὔτε Κρήτην, ἃς δὴ ἑκάστοτε φῂς εὐνομεῖσθαι, οὔτε ἄλλην οὐδεμίαν τῶν Ἑλληνίδων πόλεων οὐδὲ τῶν βαρβαρικῶν, ἀλλὰ ἐλάττω ἐξ αὐτῆς ἀπεδήμησας ἢ οἱ χωλοί τε καὶ τυφλοὶ καὶ οἱ ἄλλοι ἀνάπηροι·"
     else:
         greek_sentences[key] = normalize_greek(row["Greek"])
     persian_sentences[key] = row["Primary translation"].strip()
@@ -125,11 +125,19 @@ def align_from_column(column: str, out):
 
         if persian_translation:
             t_split = re.split(r"[\u0020]", persian_translation)
-            if word_id == "1" and greek_sentences[sentence_id].split()[0] in ["Σωκράτης.", "Κρίτων."]:
+            if word_id == "1" and greek_sentences[sentence_id].split()[0] in [
+                "Σωκράτης.",
+                "Κρίτων.",
+            ]:
                 offset = True
                 print("\t[1] {1}", s_split[0], file=out)
             if offset:
-                print("\t[" + str(int(word_id) + 1) + "]", " ".join(t_split), end=" ", file=out)
+                print(
+                    "\t[" + str(int(word_id) + 1) + "]",
+                    " ".join(t_split),
+                    end=" ",
+                    file=out,
+                )
             else:
                 print("\t[" + word_id + "]", " ".join(t_split), end=" ", file=out)
             matches = skip_substring(s_split, t_split, tokens_used)
