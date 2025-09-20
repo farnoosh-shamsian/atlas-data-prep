@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import csv
+from io import TextIOWrapper
 from pathlib import Path
 import re
 
 
-def normalize_greek(text):
+def normalize_greek(text: str):
     text = text.replace("\u1fbd", "\u2019")
     text = text.replace(":", "·")
     return text
@@ -16,19 +17,19 @@ GREEK_WORD_FIX = {
 }
 
 
-def load_rows(filename):
+def load_rows(filename: str):
     with Path(filename).open(encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         rows = [r for r in reader]
         return rows
 
 
-def skip_substring(A, B, tokens_to_ignore=None):
+def skip_substring(A: list[str], B: list[str], tokens_to_ignore: set[int] | None=None):
     if tokens_to_ignore is None:
         tokens_to_ignore = set()
     found = False
 
-    matches = []
+    matches: list[int] | None = []
     for i in range(1, len(B) + 1):
         found = False
         if matches:
@@ -51,15 +52,15 @@ def skip_substring(A, B, tokens_to_ignore=None):
     return matches
 
 
-refs = []
+refs: list[str] = []
 for line in open("texts/tlg0059.tlg003.perseus-grc2b1.txt"):
     refs.append(line.split(" ", maxsplit=1)[0])
 
 table = load_rows("wegner-corrected-finalized-versions.csv")
 treebank = load_rows("wegner-corrected-treebank.csv")
 
-greek_sentences = {}
-persian_sentences = {}
+greek_sentences: dict[str, str] = {}
+persian_sentences: dict[str, str] = {}
 for row in table:
     key = row["Title3"].split("|")[1].strip(".")
     assert key not in greek_sentences
@@ -72,13 +73,13 @@ for row in table:
     persian_sentences[key] = row["Primary translation"].strip()
 
 
-def align_from_column(column: str, out):
-    sentence_show = set()
+def align_from_column(column: str, out: TextIOWrapper):
+    sentence_show: set[str] = set()
+    offset = False
 
     for row in treebank:
         # sentence_id = row["sentence_id"]
-        sentence_id = row["word - ref"].split("|")[2]
-        word_id = row["word - ref"].split("|")[3]
+        [_corpus, _work, sentence_id, word_id] = row["word - ref"].split("|")
         greek_word = normalize_greek(row["word - form"])
 
         if greek_word in GREEK_WORD_FIX:
@@ -96,7 +97,6 @@ def align_from_column(column: str, out):
                 quit()
 
         if sentence_id not in sentence_show:
-            offset = False
             print(file=out)
             print(f"# {refs[int(sentence_id)-1]}", file=out)
             print(file=out)
@@ -119,36 +119,36 @@ def align_from_column(column: str, out):
             print("  ".join(b + "{" + str(a) + "}" for a, b in tokens), file=out)
 
             sentence_show.add(sentence_id)
-            tokens_used = set()
+            tokens_used: set[int] = set()
 
             print(file=out)
 
-        if persian_translation:
-            t_split = re.split(r"[\u0020]", persian_translation)
-            if word_id == "1" and greek_sentences[sentence_id].split()[0] in [
-                "Σωκράτης.",
-                "Κρίτων.",
-            ]:
-                offset = True
-                print("\t[1] {1}", s_split[0], file=out)
-            if offset:
-                print(
-                    "\t[" + str(int(word_id) + 1) + "]",
-                    " ".join(t_split),
-                    end=" ",
-                    file=out,
-                )
-            else:
-                print("\t[" + word_id + "]", " ".join(t_split), end=" ", file=out)
-            matches = skip_substring(s_split, t_split, tokens_used)
-            if not matches:
-                matches = skip_substring(s_split, t_split)
-            if matches:
-                print(" ".join([("{" + str(j) + "}") for j in matches]), file=out)
-                for match in matches:
-                    tokens_used.add(match)
-            else:
-                print("X", file=out)
+            if persian_translation:
+                t_split = re.split(r"[\u0020]", persian_translation)
+                if word_id == "1" and greek_sentences[sentence_id].split()[0] in [
+                    "Σωκράτης.",
+                    "Κρίτων.",
+                ]:
+                    offset = True
+                    print("\t[1] {1}", s_split[0], file=out)
+                if offset:
+                    print(
+                        "\t[" + str(int(word_id) + 1) + "]",
+                        " ".join(t_split),
+                        end=" ",
+                        file=out,
+                    )
+                else:
+                    print("\t[" + word_id + "]", " ".join(t_split), end=" ", file=out)
+                matches = skip_substring(s_split, t_split, tokens_used)
+                if not matches:
+                    matches = skip_substring(s_split, t_split)
+                if matches:
+                    print(" ".join([("{" + str(j) + "}") for j in matches]), file=out)
+                    for match in matches:
+                        tokens_used.add(match)
+                else:
+                    print("X", file=out)
 
 
 def main():
