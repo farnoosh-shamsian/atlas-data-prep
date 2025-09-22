@@ -75,7 +75,6 @@ for row in table:
 
 def align_from_column(column: str, out: TextIOWrapper):
     sentence_show: set[str] = set()
-    offset = False
 
     for row in treebank:
         # sentence_id = row["sentence_id"]
@@ -97,6 +96,7 @@ def align_from_column(column: str, out: TextIOWrapper):
                 quit()
 
         if sentence_id not in sentence_show:
+            offset = False
             print(file=out)
             print(f"# {refs[int(sentence_id)-1]}", file=out)
             print(file=out)
@@ -123,32 +123,32 @@ def align_from_column(column: str, out: TextIOWrapper):
 
             print(file=out)
 
-            if persian_translation:
-                t_split = re.split(r"[\u0020]", persian_translation)
-                if word_id == "1" and greek_sentences[sentence_id].split()[0] in [
-                    "Σωκράτης.",
-                    "Κρίτων.",
-                ]:
-                    offset = True
-                    print("\t[1] {1}", s_split[0], file=out)
-                if offset:
-                    print(
-                        "\t[" + str(int(word_id) + 1) + "]",
-                        " ".join(t_split),
-                        end=" ",
-                        file=out,
-                    )
-                else:
-                    print("\t[" + word_id + "]", " ".join(t_split), end=" ", file=out)
-                matches = skip_substring(s_split, t_split, tokens_used)
-                if not matches:
-                    matches = skip_substring(s_split, t_split)
-                if matches:
-                    print(" ".join([("{" + str(j) + "}") for j in matches]), file=out)
-                    for match in matches:
-                        tokens_used.add(match)
-                else:
-                    print("X", file=out)
+        if persian_translation:
+            t_split = re.split(r"[\u0020]", persian_translation)
+            if word_id == "1" and greek_sentences[sentence_id].split()[0] in [
+                "Σωκράτης.",
+                "Κρίτων.",
+            ]:
+                offset = True
+                print("\t[1] {1}", s_split[0], file=out)
+            if offset:
+                print(
+                    "\t[" + str(int(word_id) + 1) + "]",
+                    " ".join(t_split),
+                    end=" ",
+                    file=out,
+                )
+            else:
+                print("\t[" + word_id + "]", " ".join(t_split), end=" ", file=out)
+            matches = skip_substring(s_split, t_split, tokens_used)
+            if not matches:
+                matches = skip_substring(s_split, t_split)
+            if matches:
+                print(" ".join([("{" + str(j) + "}") for j in matches]), file=out)
+                for match in matches:
+                    tokens_used.add(match)
+            else:
+                print("X", file=out)
 
 
 def main():
