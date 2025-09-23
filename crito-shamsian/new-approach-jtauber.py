@@ -60,6 +60,11 @@ for line in open("texts/tlg0059.tlg003.perseus-grc2b1.txt"):
 table = load_rows("wegner-corrected-finalized-versions.csv")
 treebank = load_rows("wegner-corrected-treebank.csv")
 
+greek_tokens = defaultdict(list)
+for line in open("greek_tokens.tsv"):
+    sentence_num, token_num, token = line.strip().split("\t")
+    greek_tokens[sentence_num].append((token_num, token))
+
 greek_sentences: dict[str, str] = {}
 persian_sentences: defaultdict[str, dict[str, str]] = defaultdict(dict)
 for row in table:
@@ -79,16 +84,13 @@ def align_from_column(column: str, out: TextIOWrapper):
     sentence_show: set[str] = set()
 
     for row in treebank:
-        # sentence_id = row["sentence_id"]
-        [_corpus, _work, sentence_id, word_id] = row["word - ref"].split("|")
+        [_, _, sentence_id, word_id] = row["word - ref"].split("|")
         greek_word = normalize_greek(row["word - form"])
 
         if greek_word in GREEK_WORD_FIX:
             greek_word = GREEK_WORD_FIX[greek_word]
 
         persian_translation = row[column].strip()
-
-        greek_sentences[sentence_id]
 
         if greek_word not in ["[0]", "[1]", "[2]", "[3]", "[4]", "—"]:
             if greek_word not in greek_sentences[sentence_id]:
@@ -100,18 +102,20 @@ def align_from_column(column: str, out: TextIOWrapper):
         if sentence_id not in sentence_show:
             offset = False
             print(file=out)
-            print(f"# {refs[int(sentence_id)-1]}", file=out)
+            print(f"# {refs[int(sentence_id)-1]} ({sentence_id})", file=out)
             print(file=out)
             print(greek_sentences[sentence_id].strip(), sep="\t", file=out)
             print(persian_sentences[column][sentence_id], sep="\t", file=out)
             print(file=out)
 
-            r_split = [
-                token.strip(".,;")
-                for token in re.split(r"[\u0020]", greek_sentences[sentence_id].strip())
-            ]
-            tokens = list(enumerate(r_split, 1))
-            print("  ".join(b + "[" + str(a) + "]" for a, b in tokens), file=out)
+            # r_split = [
+            #     token.strip(".,;")
+            #     for token in re.split(r"[\u0020]", greek_sentences[sentence_id].strip())
+            # ]
+            # tokens = list(enumerate(r_split, 1))
+            # print("  ".join(b + "[" + str(a) + "]" for a, b in tokens), file=out)
+
+            print("  ".join(b + "[" + str(a) + "]" for a, b in greek_tokens[sentence_id]), file=out)
 
             s_split = [
                 token.strip("،؟.:«»![]؛")
@@ -132,16 +136,8 @@ def align_from_column(column: str, out: TextIOWrapper):
                 "Κρίτων.",
             ]:
                 offset = True
-                print("\t[1] {1}", s_split[0], file=out)
-            if offset:
-                print(
-                    "\t[" + str(int(word_id) + 1) + "]",
-                    " ".join(t_split),
-                    end=" ",
-                    file=out,
-                )
-            else:
-                print("\t[" + word_id + "]", " ".join(t_split), end=" ", file=out)
+                print("\t[0] {1}", s_split[0], file=out)
+            print("\t[" + word_id + "]", " ".join(t_split), end=" ", file=out)
             matches = skip_substring(s_split, t_split, tokens_used)
             if not matches:
                 matches = skip_substring(s_split, t_split)
@@ -150,7 +146,7 @@ def align_from_column(column: str, out: TextIOWrapper):
                 for match in matches:
                     tokens_used.add(match)
             else:
-                print("X", file=out)
+                print("XXX", file=out)
 
 
 def main():
